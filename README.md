@@ -420,24 +420,24 @@ All 88 ASKILL validation checks run automatically. The ZIP is only produced if a
 
 #### Step 4 — Upload to Microsoft 365 Admin Centre
 
-**For sideloading / testing:**
+**For sideloading / testing (personal):**
 
 1. Open [https://admin.microsoft.com](https://admin.microsoft.com) and sign in.
-2. Navigate to **Manage apps** (left navigation — not Settings).
-3. Click **Upload custom app**.
+2. Navigate to **Agents** → **All agents** (left navigation).
+3. Click the **`...`** menu (top-right of the agent list) → **Add agent**.
 4. Upload `ado-cowork-plugin.zip`.
-5. Open **Cowork → Sources & Skills** — your skills should appear.
+5. Open **Microsoft 365 Copilot** → the plugin appears in the **Sources & Skills** panel.
 
 **For org-wide deployment:**
 
 1. Open [https://admin.microsoft.com](https://admin.microsoft.com) and sign in.
-2. Navigate to **Copilot → Agents → All agents**.
-3. Find your uploaded plugin.
-4. Under **Deploy to**, select **Entire organisation** or **Specific users/groups**.
-5. Click **Deploy**.
+2. Navigate to **Agents** → **All agents**.
+3. Click the **`...`** menu → **Add agent** → upload `ado-cowork-plugin.zip`.
+4. Once added, find **ADO Cowork** in the list, open it, and under **Deploy to** select
+   **Entire organisation** or **Specific users/groups** → click **Deploy**.
 
-> Deployment to the whole org propagates automatically — users do not need to install
-> anything. The plugin appears in their Cowork **Sources & Skills** panel.
+> Deployment propagates automatically — users do not need to install anything.
+> The plugin appears in their Cowork **Sources & Skills** panel.
 
 > **Can't find the upload option?** Make sure Frontier is enabled on your admin account
 > (**Copilot → Settings → Frontier**). Without it, Cowork-specific features are not visible.
@@ -490,7 +490,7 @@ To push an updated version:
 1. Make changes to skills or manifest.
 2. Bump `"version"` in `manifest.json` (e.g. `"1.0.0"` → `"1.1.0"`).
 3. Run `.\package.ps1` to produce a new ZIP.
-4. In M365 Admin Centre → **Copilot → Agents → All agents** → find **ADO Cowork** → **Update**.
+4. In M365 Admin Centre → **Agents** → **All agents** → find **ADO Cowork** → **Update**.
 5. Upload the new ZIP. Users get the update automatically.
 
 ---
