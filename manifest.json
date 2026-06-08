@@ -2,13 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.28/MicrosoftTeams.schema.json",
   "manifestVersion": "1.28",
   "version": "1.0.0",
-  "id": "e8b2a3f1-7c4d-4f91-b2e0-ado1c0ca0001",
-  "packageName": "com.ado.cowork-plugin",
+  "id": "e8b2a3f1-7c4d-4f91-b2e0-ad01c0ca0001",
   "developer": {
-    "name": "YOUR_NAME",
-    "websiteUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin",
-    "privacyUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin/blob/main/PRIVACY.md",
-    "termsOfUseUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin/blob/main/LICENSE"
+    "name": "Aurelien Clere",
+    "websiteUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin",
+    "privacyUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin/blob/main/PRIVACY.md",
+    "termsOfUseUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin/blob/main/LICENSE"
   },
   "name": {
     "short": "ADO Cowork",
@@ -24,29 +23,31 @@
   },
   "accentColor": "#0078d4",
   "agentSkills": [
-    "skills/ado-context",
-    "skills/ado-pm-reporting",
-    "skills/ado-project-discovery",
-    "skills/ado-work-items",
-    "skills/ado-sprints-capacity",
-    "skills/ado-pipelines",
-    "skills/ado-repositories",
-    "skills/ado-pull-requests",
-    "skills/ado-test-plans",
-    "skills/ado-search",
-    "skills/ado-wiki"
+    {"folder": "./skills/ado-context"},
+    {"folder": "./skills/ado-pm-reporting"},
+    {"folder": "./skills/ado-project-discovery"},
+    {"folder": "./skills/ado-work-items"},
+    {"folder": "./skills/ado-sprints-capacity"},
+    {"folder": "./skills/ado-pipelines"},
+    {"folder": "./skills/ado-repositories"},
+    {"folder": "./skills/ado-pull-requests"},
+    {"folder": "./skills/ado-test-plans"},
+    {"folder": "./skills/ado-search"},
+    {"folder": "./skills/ado-wiki"}
   ],
   "agentConnectors": [
     {
       "id": "ado-mcp-connector",
-      "name": "Azure DevOps MCP",
+      "displayName": "Azure DevOps MCP",
       "description": "Remote MCP connector to the Microsoft Azure DevOps MCP server.",
       "toolSource": {
         "remoteMcpServer": {
-          "mcpServerUrl": "https://mcp.dev.azure.com/YOUR_ORG_NAME",
-          "auth": {
-            "type": "OAuthPluginVault",
-            "oAuthPluginVaultId": "REPLACE_WITH_VAULT_REFERENCE_ID"
+          "mcpServerUrl": "https://mcp.dev.azure.com/contoso",
+          "mcpToolDescription": {
+            "file": "ado-mcp-tools.json"
+          },
+          "authorization": {
+            "type": "None"
           }
         }
       }

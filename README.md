@@ -88,7 +88,7 @@ flowchart LR
         direction TB
         OA["A — Skills-only\nPrompts folder copy\nNo server needed"]
         OB["B — VS Code  mcp.json\ntype: http · Azure AD\nhttps://mcp.dev.azure.com/{org}"]
-        OC["C — M365 Copilot\nmanifest.json\nOAuthPluginVault"]
+        OC["C — M365 Copilot\nmanifest.json\nauth: None"]
     end
 
     %% ── LAYER 4 — MCP SERVER ────────────────────────────────────────────────
@@ -125,7 +125,7 @@ flowchart LR
     PM & DEV & FUNC -->|"plain-English prompt"| PLUGIN
     PLUGIN --> OA & OB & OC
     OB -->|"HTTP · Azure AD"| EP
-    OC -->|"HTTP · OAuthPluginVault"| EP
+    OC -->|"HTTP · Azure AD (user session)"| EP
     OC -->|"create_presentation"| PPT
     T1 & T3 & T7 <-->|"REST API"| D1
     T2 & T7     <-->|"REST API"| D2
@@ -225,7 +225,7 @@ ado-cowork-plugin/
 |---|---|---|---|---|
 | **A — Skills-only** | Any AI assistant | None | Copy a folder | GitHub Copilot (any plan) + Azure DevOps Basic |
 | **B — Local MCP** | VS Code Copilot | Azure AD (auto) | Edit mcp.json | GitHub Copilot (any plan) + Azure DevOps Basic |
-| **C — M365 Copilot** | Whole M365 tenant | OAuthPluginVault | Admin upload | Microsoft 365 Copilot + Azure DevOps Basic |
+| **C — M365 Copilot** | Whole M365 tenant | None (upgradable to OAuthPluginVault) | Admin upload | Microsoft 365 Copilot + Azure DevOps Basic + Frontier preview |
 
 ---
 
@@ -364,10 +364,14 @@ mode for Project Managers and teams.
 
 | Requirement | Notes |
 |---|---|
+| **Frontier preview program** | Your tenant must be enrolled — [sign up here](https://adoption.microsoft.com/en-us/copilot/frontier-program/) |
+| **Frontier enabled on your admin account** | In M365 admin center: **Copilot → Settings → Frontier** — must be toggled ON for the uploading account specifically |
 | Microsoft 365 Copilot licences | Required for end-users |
-| Microsoft 365 admin centre access | Global Admin or Teams Admin role |
+| Microsoft 365 admin centre access | Global Admin or Copilot Admin role |
 | Azure DevOps organisation name | Segment after `dev.azure.com/` in your browser |
 | `ado-cowork-plugin.zip` | Produced by `package.ps1` |
+
+> **If Cowork is not visible in your admin center**, the Frontier toggle is not enabled on your account. Fix that first — the upload option will not appear without it.
 
 #### Step 1 — Prepare manifest.json
 
@@ -381,7 +385,7 @@ Open [manifest.json](manifest.json) and replace the two placeholder values:
 
 ```jsonc
 // Line to update — id (optional but recommended — generate a fresh GUID):
-"id": "e8b2a3f1-7c4d-4f91-b2e0-ado1c0ca0001"
+"id": "e8b2a3f1-7c4d-4f91-b2e0-ad01c0ca0001"
 //     ↑ replace with: [guid]::NewGuid().ToString() in PowerShell
 ```
 
@@ -416,20 +420,27 @@ All 88 ASKILL validation checks run automatically. The ZIP is only produced if a
 
 #### Step 4 — Upload to Microsoft 365 Admin Centre
 
-1. Open [https://admin.microsoft.com](https://admin.microsoft.com) and sign in as a
-   Global Admin or Teams Admin.
-2. Navigate to **Settings → Integrated apps**.
-3. Click **Upload custom apps**.
-4. Select **Upload a Teams app** (the Cowork manifest uses the Teams app schema).
-5. Upload `ado-cowork-plugin.zip`.
-6. On the **Add users** step, choose:
-   - **Entire organisation** — deploys to all M365 Copilot users
-   - **Specific users/groups** — for a pilot rollout
-7. Click **Deploy**.
+**For sideloading / testing:**
 
-> Deployment typically takes **1–24 hours** to propagate to all users in large tenants.
-> Users do not need to install anything — the plugin appears automatically in
-> Microsoft 365 Copilot.
+1. Open [https://admin.microsoft.com](https://admin.microsoft.com) and sign in.
+2. Navigate to **Manage apps** (left navigation — not Settings).
+3. Click **Upload custom app**.
+4. Upload `ado-cowork-plugin.zip`.
+5. Open **Cowork → Sources & Skills** — your skills should appear.
+
+**For org-wide deployment:**
+
+1. Open [https://admin.microsoft.com](https://admin.microsoft.com) and sign in.
+2. Navigate to **Copilot → Agents → All agents**.
+3. Find your uploaded plugin.
+4. Under **Deploy to**, select **Entire organisation** or **Specific users/groups**.
+5. Click **Deploy**.
+
+> Deployment to the whole org propagates automatically — users do not need to install
+> anything. The plugin appears in their Cowork **Sources & Skills** panel.
+
+> **Can't find the upload option?** Make sure Frontier is enabled on your admin account
+> (**Copilot → Settings → Frontier**). Without it, Cowork-specific features are not visible.
 
 #### Step 5 — Validate in Microsoft 365 Copilot
 
@@ -440,30 +451,37 @@ the Copilot app in Teams) and type:
 
 The `ado-context` skill should activate and call `core_list_projects` on your configured
 org. If the plugin is not responding, check:
-- The plugin is listed under **Manage plugins** in the Copilot interface (click the
-  plugin icon in the chat toolbar)
-- The plugin is enabled (toggle on)
-- The `mcpServerUrl` in manifest.json matches your actual ADO org name
+- Open the **Sources & Skills** panel in Cowork — the plugin should appear there
+- The plugin is enabled (toggle on in Sources & Skills)
+- The `mcpServerUrl` in `manifest.json` matches your actual ADO org name (replace `contoso`)
 
-#### Step 6 — Authentication (OAuthPluginVault)
+#### Step 6 — Authentication
 
-For M365 Copilot, the `manifest.json` `agentConnectors` section uses **OAuthPluginVault**
-— M365 handles token acquisition and injection automatically:
+The current manifest uses `"type": "None"` for the MCP connector authorization:
 
 ```jsonc
-"auth": {
-  "type": "OAuthPluginVault",
-  "reference": "ADO-OAuth"
+"authorization": {
+  "type": "None"
 }
 ```
 
-On first use, M365 Copilot will prompt the user to consent to the Azure DevOps connection.
-After consent, the token is stored in the M365 Copilot plugin vault — **no PAT, no service
-principal, no Key Vault** required. Each user authenticates with their own Azure AD identity.
+This means Cowork connects to `https://mcp.dev.azure.com/{orgName}` without injecting
+an OAuth token. The Azure DevOps MCP server itself still enforces Azure AD authentication
+for each user — the `None` type simply means no credential is pre-injected by the plugin
+vault; users authenticate through their existing M365 session.
 
-> **Guest / customer org users:** each user's guest-account token is handled individually
-> by OAuthPluginVault. For users who are guests in a customer ADO tenant, they will be
-> prompted once for consent on that tenant — the same one-time flow as Option B.
+**To upgrade to full OAuthPluginVault for production** (each user consents once, token
+stored in M365 vault, no prompts after that):
+1. Register an OAuth client in [Teams Developer Portal](https://dev.teams.microsoft.com)
+2. Set usage to **Any Microsoft 365 Organization**
+3. Replace the authorization block in `manifest.json`:
+   ```jsonc
+   "authorization": {
+     "type": "OAuthPluginVault",
+     "referenceId": "YOUR_OAUTH_REGISTRATION_ID"
+   }
+   ```
+4. Run `package.ps1` and redeploy.
 
 #### Updating the plugin
 
@@ -472,8 +490,8 @@ To push an updated version:
 1. Make changes to skills or manifest.
 2. Bump `"version"` in `manifest.json` (e.g. `"1.0.0"` → `"1.1.0"`).
 3. Run `.\package.ps1` to produce a new ZIP.
-4. In M365 Admin Centre → **Integrated apps** → find **ADO Cowork** → **Update**.
-5. Upload the new ZIP. Users get the update automatically within 24h.
+4. In M365 Admin Centre → **Copilot → Agents → All agents** → find **ADO Cowork** → **Update**.
+5. Upload the new ZIP. Users get the update automatically.
 
 ---
 
@@ -488,7 +506,8 @@ See [Licence requirements](#licence-requirements) above for the full licence bre
 | Node.js / npm | Not needed | Not needed | Not needed |
 | Azure DevOps PAT | Not needed | Not needed | Not needed |
 | Azure subscription | Not needed | Not needed | Not needed |
-| M365 Global / Teams Admin | Not needed | Not needed | Required (one-time) |
+| M365 Global / Copilot Admin | Not needed | Not needed | Required (one-time) |
+| Frontier preview program | Not needed | Not needed | Required |
 
 > **Options B and C both use the Azure DevOps built-in MCP endpoint**
 > (`https://mcp.dev.azure.com/{orgName}`) — no npm package or Azure infrastructure to provision.
@@ -527,8 +546,9 @@ No PAT is required. If prompted, sign in via `Azure: Sign In` in the command pal
   authentication** at the platform level. No anonymous access is possible.
 - VS Code (Option B) authenticates using your existing Azure AD session — no PAT, no
   service principal, no Key Vault required.
-- M365 Copilot (Option C) uses **OAuthPluginVault** — each user's token is managed by
-  the M365 platform; secrets are never in source code or committed files.
+- M365 Copilot (Option C) uses `authorization.type: None` — the ADO MCP server still
+  enforces Azure AD authentication per user at the platform level; secrets are never in
+  source code or committed files. Upgrade to OAuthPluginVault for production (see Step 6).
 - See [SECURITY.md](SECURITY.md) for least-privilege PAT scope guidance if your
   organisation requires PAT-based access instead of Azure AD.
 
