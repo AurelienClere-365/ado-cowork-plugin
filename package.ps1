@@ -71,8 +71,8 @@ Write-Host ""
 # ---------------------------------------------------------------------------
 Write-Host "P001  Folder exists" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillDir = Join-Path $root $skill.Replace('/', '\')
-    Test-Rule "P001/$skill" (Test-Path $skillDir -PathType Container) `
+    $skillDir = Join-Path $root $skill.folder.Replace('/', '\')
+    Test-Rule "P001/$($skill.folder)" (Test-Path $skillDir -PathType Container) `
               "Folder not found: $skillDir"
 }
 
@@ -82,8 +82,8 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P002  SKILL.md present" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
-    Test-Rule "P002/$skill" (Test-Path $skillMd) "SKILL.md not found: $skillMd"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
+    Test-Rule "P002/$($skill.folder)" (Test-Path $skillMd) "SKILL.md not found: $skillMd"
 }
 
 # ---------------------------------------------------------------------------
@@ -92,10 +92,10 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P003  YAML frontmatter present" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
     if (Test-Path $skillMd) {
         $content = [IO.File]::ReadAllText($skillMd)
-        Test-Rule "P003/$skill" ($content.TrimStart().StartsWith('---')) `
+        Test-Rule "P003/$($skill.folder)" ($content.TrimStart().StartsWith('---')) `
                   "SKILL.md does not start with --- frontmatter"
     }
 }
@@ -106,10 +106,10 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P004  name: field present" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
     if (Test-Path $skillMd) {
         $content = [IO.File]::ReadAllText($skillMd)
-        Test-Rule "P004/$skill" ($content -match 'name:\s+\S') `
+        Test-Rule "P004/$($skill.folder)" ($content -match 'name:\s+\S') `
                   "Missing 'name:' in frontmatter"
     }
 }
@@ -120,10 +120,10 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P005  description: field present" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
     if (Test-Path $skillMd) {
         $content = [IO.File]::ReadAllText($skillMd)
-        Test-Rule "P005/$skill" ($content -match 'description:') `
+        Test-Rule "P005/$($skill.folder)" ($content -match 'description:') `
                   "Missing 'description:' in frontmatter"
     }
 }
@@ -134,17 +134,17 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P006  name matches folder" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
-    $folderName = Split-Path $skill -Leaf
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
+    $folderName = Split-Path $skill.folder -Leaf
     if (Test-Path $skillMd) {
         $content = [IO.File]::ReadAllText($skillMd)
         $nameMatch = [regex]::Match($content, 'name:\s+(\S+)')
         if ($nameMatch.Success) {
             $nameVal = $nameMatch.Groups[1].Value.Trim('"').Trim("'")
-            Test-Rule "P006/$skill" ($nameVal -eq $folderName) `
+            Test-Rule "P006/$($skill.folder)" ($nameVal -eq $folderName) `
                       "name: '$nameVal' does not match folder '$folderName'"
         } else {
-            Test-Rule "P006/$skill" $false "Could not extract name: value"
+            Test-Rule "P006/$($skill.folder)" $false "Could not extract name: value"
         }
     }
 }
@@ -155,12 +155,12 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P007  Non-trivial body" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
     if (Test-Path $skillMd) {
         $content  = [IO.File]::ReadAllText($skillMd)
         $bodyStart = $content.IndexOf('---', 3)   # closing ---
         $body     = if ($bodyStart -ge 0) { $content.Substring($bodyStart + 3) } else { '' }
-        Test-Rule "P007/$skill" ($body.Trim().Length -ge 200) `
+        Test-Rule "P007/$($skill.folder)" ($body.Trim().Length -ge 200) `
                   "Skill body too short ($($body.Trim().Length) chars, minimum 200)"
     }
 }
@@ -171,10 +171,10 @@ foreach ($skill in $skills) {
 Write-Host ""
 Write-Host "P008  license: MIT" -ForegroundColor DarkCyan
 foreach ($skill in $skills) {
-    $skillMd = Join-Path $root "$($skill.Replace('/', '\'))\SKILL.md"
+    $skillMd = Join-Path $root "$($skill.folder.Replace('/', '\'))\SKILL.md"
     if (Test-Path $skillMd) {
         $content = [IO.File]::ReadAllText($skillMd)
-        Test-Rule "P008/$skill" ($content -match 'license:\s+MIT') `
+        Test-Rule "P008/$($skill.folder)" ($content -match 'license:\s+MIT') `
                   "Missing 'license: MIT' in frontmatter"
     }
 }
@@ -199,7 +199,7 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 $include = @('manifest.json','README.md','CHANGELOG.md','CONTRIBUTING.md',
              'PRIVACY.md','SECURITY.md','LICENSE','EXAMPLES.md',
              'package.ps1','color.png','outline.png',
-             'architecture.png','architecture.mmd')
+             'architecture.png','architecture.mmd','ado-mcp-tools.json')
 
 $tempDir = Join-Path $env:TEMP "ado-cowork-pkg-$(New-Guid)"
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
