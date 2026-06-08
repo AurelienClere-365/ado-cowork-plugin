@@ -384,6 +384,12 @@ Open [manifest.json](manifest.json) and replace the two placeholder values:
 ```
 
 ```jsonc
+// Line to update — referenceId (from Step 6b below):
+"referenceId": "YOUR_VAULT_REFERENCE_ID"
+//              ↑ paste the Vault reference ID after completing Step 6
+```
+
+```jsonc
 // Line to update — id (optional but recommended — generate a fresh GUID):
 "id": "e8b2a3f1-7c4d-4f91-b2e0-ad01c0ca0001"
 //     ↑ replace with: [guid]::NewGuid().ToString() in PowerShell
