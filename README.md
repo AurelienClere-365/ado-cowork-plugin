@@ -392,27 +392,17 @@ Open [manifest.json](manifest.json) and replace the two placeholder values:
 #### Step 2 — Add icon files (required by M365)
 
 The manifest references `color.png` (192×192 px) and `outline.png` (32×32 px, white
-icon on transparent background). These must exist before packaging.
+icon on transparent background).
 
-Create placeholder icons or copy from an existing Cowork plugin:
+Both icons are **already included** in the repository:
 
-```powershell
-# Quick placeholder — creates minimal valid PNGs (replace with real icons later)
-Add-Type -Assembly System.Drawing
-$bmp = New-Object System.Drawing.Bitmap 192, 192
-$g   = [System.Drawing.Graphics]::FromImage($bmp)
-$g.Clear([System.Drawing.Color]::FromArgb(0, 120, 212))   # Azure blue
-$g.Dispose()
-$bmp.Save("$PSScriptRoot\color.png",   [System.Drawing.Imaging.ImageFormat]::Png)
-$bmp.Dispose()
+| File | Size | Description |
+|---|---|---|
+| `color.png` | 192×192 px | Azure blue (#0078d4) background with white **ADO** text |
+| `outline.png` | 32×32 px | Transparent background with white **A** letter |
 
-$bmp2 = New-Object System.Drawing.Bitmap 32, 32
-$g2   = [System.Drawing.Graphics]::FromImage($bmp2)
-$g2.Clear([System.Drawing.Color]::White)
-$g2.Dispose()
-$bmp2.Save("$PSScriptRoot\outline.png", [System.Drawing.Imaging.ImageFormat]::Png)
-$bmp2.Dispose()
-```
+To replace them with custom branded icons, simply overwrite these two files with your own
+PNGs at the same dimensions before running `package.ps1`.
 
 #### Step 3 — Build the ZIP package
 
