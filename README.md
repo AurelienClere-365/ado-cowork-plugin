@@ -453,35 +453,68 @@ The `ado-context` skill should activate and call `core_list_projects` on your co
 org. If the plugin is not responding, check:
 - Open the **Sources & Skills** panel in Cowork — the plugin should appear there
 - The plugin is enabled (toggle on in Sources & Skills)
-- The `mcpServerUrl` in `manifest.json` matches your actual ADO org name (replace `contoso`)
+- The `mcpServerUrl` in `manifest.json` has your actual ADO org name (not `contoso`)
+- **OAuthPluginVault is configured** (see Step 6 below) — without it,
+  `mcp.dev.azure.com` rejects the connection and Cowork will respond with
+  *"I don't have a way to connect to Azure DevOps from here"*
 
-#### Step 6 — Authentication
+#### Step 6 — Authentication (required for MCP tools to work)
 
-The current manifest uses `"type": "None"` for the MCP connector authorization:
+> **Important:** `mcp.dev.azure.com` requires a Bearer token for every request.
+> The current manifest ships with `"type": "None"` as a safe default for upload
+> validation, but **the MCP connector will not function until you configure
+> OAuthPluginVault**. Without it, Cowork cannot call any ADO MCP tools.
+
+##### 6a — Create an Azure AD app registration
+
+1. Go to [portal.azure.com](https://portal.azure.com) → **Azure Active Directory** →
+   **App registrations** → **New registration**
+2. Name: `ADO Cowork Plugin` — Supported account types: **Single tenant**
+3. Redirect URI: leave blank for now
+4. After creation, go to **API permissions** → **Add a permission** → **Azure DevOps**
+   → **Delegated** → tick `user_impersonation` → **Add permissions**
+5. Click **Grant admin consent** for your tenant
+6. Go to **Certificates & secrets** → **New client secret** → set an expiry → **Add**
+7. Copy the **secret value** immediately (shown once only)
+8. Note down:
+   - **Client ID** (Overview page, “Application (client) ID”)
+   - **Tenant ID** (Overview page, “Directory (tenant) ID”)
+   - **Client secret** (from step 7)
+
+##### 6b — Register the OAuth credential in M365 Admin Center
+
+This step must be done by a **Global Admin or Copilot Admin**.
+
+1. Go to [admin.microsoft.com](https://admin.microsoft.com) → **Settings** → **Copilot**
+   → **Plugin management**
+2. Click **Add OAuth credential** and fill in:
+
+| Field | Value |
+|---|---|
+| Client ID | from step 6a |
+| Client secret | from step 6a |
+| Token URL | `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` |
+| Scope | `499b84ac-1321-427f-aa17-267ca6975798/user_impersonation` |
+
+3. Save — copy the **Vault reference ID** shown.
+
+> The scope `499b84ac-1321-427f-aa17-267ca6975798` is the fixed Azure resource ID
+> for Azure DevOps across all tenants.
+
+##### 6c — Update manifest.json and redeploy
 
 ```jsonc
 "authorization": {
-  "type": "None"
+  "type": "OAuthPluginVault",
+  "referenceId": "YOUR_VAULT_REFERENCE_ID"  // paste from step 6b
 }
 ```
 
-This means Cowork connects to `https://mcp.dev.azure.com/{orgName}` without injecting
-an OAuth token. The Azure DevOps MCP server itself still enforces Azure AD authentication
-for each user — the `None` type simply means no credential is pre-injected by the plugin
-vault; users authenticate through their existing M365 session.
+Then bump the version, run `.\.package.ps1`, and update the plugin in M365 Admin Center
+(**Agents → All agents → ADO Cowork → Update**).
 
-**To upgrade to full OAuthPluginVault for production** (each user consents once, token
-stored in M365 vault, no prompts after that):
-1. Register an OAuth client in [Teams Developer Portal](https://dev.teams.microsoft.com)
-2. Set usage to **Any Microsoft 365 Organization**
-3. Replace the authorization block in `manifest.json`:
-   ```jsonc
-   "authorization": {
-     "type": "OAuthPluginVault",
-     "referenceId": "YOUR_OAUTH_REGISTRATION_ID"
-   }
-   ```
-4. Run `package.ps1` and redeploy.
+After updating, Cowork will prompt each user to consent once; tokens are then stored and
+re-injected automatically on every call to `mcp.dev.azure.com`.
 
 #### Updating the plugin
 
