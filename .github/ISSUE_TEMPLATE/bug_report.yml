@@ -1,0 +1,56 @@
+name: Bug Report
+description: Something is not working correctly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you for filing a bug report."
+  - type: input
+    id: skill
+    attributes:
+      label: Affected skill
+      description: Which skill or MCP tool is misbehaving?
+      placeholder: "e.g. ado-work-items / wit_work_item_write"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: What did you expect vs. what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Ask the assistant: "..."
+        2. The skill calls tool X
+        3. Error / wrong result returned
+    validations:
+      required: true
+  - type: dropdown
+    id: assistant
+    attributes:
+      label: AI assistant used
+      options:
+        - GitHub Copilot
+        - Claude Code
+        - Cursor
+        - Continue.dev
+        - Gemini CLI
+        - JetBrains Junie
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Deployment mode
+      options:
+        - Skills-only (Option A)
+        - Local MCP / stdio (Option B)
+        - Azure Connector / M365 (Option C)
+    validations:
+      required: true

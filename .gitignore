@@ -1,0 +1,21 @@
+# Secrets and credentials
+mcp.json
+*.env
+.env.*
+*.pat
+secrets.json
+
+# Build outputs
+ado-cowork-plugin.zip
+dist/
+out/
+
+# VS Code local settings
+.vscode/settings.json
+.vscode/launch.json
+
+# OS / IDE artefacts
+Thumbs.db
+.DS_Store
+*.swp
+*~

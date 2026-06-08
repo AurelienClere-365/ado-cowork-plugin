@@ -1,0 +1,30 @@
+name: Feature Request
+description: Suggest a new skill or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you for your suggestion!"
+  - type: input
+    id: title
+    attributes:
+      label: Feature title
+      placeholder: "e.g. New skill: ado-boards-analytics"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the feature
+      description: What ADO MCP tools would this skill use? What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example prompt
+      description: Give 1-3 example prompts a user would type to trigger this skill.
+      placeholder: |
+        "Show me the velocity trend for the Platform team over the last 5 sprints."
+    validations:
+      required: false

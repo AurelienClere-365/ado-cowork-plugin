@@ -1,0 +1,100 @@
+﻿flowchart LR
+
+    %% ── LAYER 1 — USERS ────────────────────────────────────────────────────
+    subgraph USERS["👥  Users"]
+        direction TB
+        PM(["🗂️  Project Manager\nSprint health · go/no-go\nvelocity · committee deck"])
+        DEV(["💻  Developer\nPipelines · PRs\nbranches · code search"])
+        FUNC(["📋  Functional Consultant\nBacklog · wiki\ntest plans · search"])
+    end
+
+    %% ── LAYER 2 — PLUGIN SKILLS ─────────────────────────────────────────────
+    subgraph PLUGIN["🔌  ADO Cowork Plugin  —  11 SKILL.md files"]
+        direction TB
+        CTX["ado-context\nOrg & project selection\nsession context hub"]
+        subgraph PMS["PM Skills  ★"]
+            S1["ado-pm-reporting\nSprint health · go/no-go\nvelocity · retro · deck"]
+            S2["ado-sprints-capacity"]
+            S3["ado-work-items"]
+            S4["ado-project-discovery"]
+        end
+        subgraph DEVS["Dev / All Skills"]
+            S5["ado-pipelines"]
+            S6["ado-repositories"]
+            S7["ado-pull-requests"]
+            S8["ado-test-plans"]
+            S9["ado-search"]
+            S10["ado-wiki"]
+        end
+        CTX -.->|"activeOrg\nactiveProject"| PMS & DEVS
+    end
+
+    %% ── LAYER 3 — DEPLOYMENT ────────────────────────────────────────────────
+    subgraph DEPLOY["⚙️  Deployment options"]
+        direction TB
+        OA["A — Skills-only\nPrompts folder copy\nNo server needed"]
+        OB["B — VS Code  mcp.json\ntype: http · Azure AD\nhttps://mcp.dev.azure.com/{org}"]
+        OC["C — M365 Copilot\nmanifest.json\nOAuthPluginVault"]
+    end
+
+    %% ── LAYER 4 — MCP SERVER ────────────────────────────────────────────────
+    subgraph MCPSVR["☁️  Azure DevOps built-in MCP Server  (Microsoft-hosted · no provisioning)"]
+        direction TB
+        EP["https://mcp.dev.azure.com/{orgName}\nAzure AD auth"]
+        subgraph TOOLS["~37 MCP tools"]
+            direction LR
+            T1["wit_*\nWork Items"]
+            T2["pipelines_*\nCI/CD"]
+            T3["repo_*\nRepos & PRs"]
+            T4["testplan_*\nTest Plans"]
+            T5["search_*\nCode · Wiki · WI"]
+            T6["wiki_*\nWiki pages"]
+            T7["work_* · core_*\nSprints · Projects"]
+        end
+        EP --> T1 & T2 & T3 & T4 & T5 & T6 & T7
+    end
+
+    %% ── LAYER 5 — ADO DATA ──────────────────────────────────────────────────
+    subgraph ADO["🗄️  Azure DevOps Organisation"]
+        direction TB
+        D1["📋 Boards\n& Work Items"]
+        D2["⚙️ Pipelines\n& Builds"]
+        D3["🔀 Repos\n& Pull Requests"]
+        D4["✅ Test Plans\n& Results"]
+        D5["📖 Wikis\n& Pages"]
+    end
+
+    %% ── OUTPUT — M365 ONLY ──────────────────────────────────────────────────
+    PPT["📊  PowerPoint deck\nOneDrive · SharePoint\nM365 Copilot only"]
+
+    %% ── EDGES ───────────────────────────────────────────────────────────────
+    PM & DEV & FUNC -->|"plain-English prompt"| PLUGIN
+    PLUGIN --> OA & OB & OC
+    OB -->|"HTTP · Azure AD"| EP
+    OC -->|"HTTP · OAuthPluginVault"| EP
+    OC -->|"create_presentation"| PPT
+    T1 & T3 & T7 <-->|"REST API"| D1
+    T2 & T7     <-->|"REST API"| D2
+    T3          <-->|"REST API"| D3
+    T4          <-->|"REST API"| D4
+    T5          <-->|"REST API"| D1 & D3 & D5
+    T6          <-->|"REST API"| D5
+
+    %% ── STYLES ──────────────────────────────────────────────────────────────
+    classDef user   fill:#1e3a5f,stroke:#4fa3e0,color:#cce5ff
+    classDef pmsk   fill:#0d3068,stroke:#4fa3e0,color:#fff
+    classDef devsk  fill:#1a2a3a,stroke:#4fa3e0,color:#cce5ff
+    classDef deploy fill:#1e3a1e,stroke:#6abf69,color:#cfffce
+    classDef ep     fill:#003366,stroke:#4fa3e0,color:#fff
+    classDef tool   fill:#001a33,stroke:#4fa3e0,color:#99ccff
+    classDef ado    fill:#005a9e,stroke:#4fa3e0,color:#fff
+    classDef ppt    fill:#c43e1c,stroke:#e8814a,color:#fff
+    class CTX ctx
+    class PM,DEV,FUNC user
+    class S1,S2,S3,S4 pmsk
+    class S5,S6,S7,S8,S9,S10 devsk
+    class OA,OB,OC deploy
+    class EP ep
+    class T1,T2,T3,T4,T5,T6,T7 tool
+    class D1,D2,D3,D4,D5 ado
+    class PPT ppt
