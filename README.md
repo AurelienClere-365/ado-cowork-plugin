@@ -41,7 +41,7 @@ Azure DevOps MCP tool and returns structured results directly in your chat windo
 - "Add customer org contoso — I have guest access there."
 - "Show me all my configured organisations and check which ones I can access."
 - "Switch to the Fabrikam org and list their projects."
-- "I’m now working on the Genvia engagement — use org genvia-solutions, project Finance."
+- "I'm now working on the Contoso engagement — use org contoso, project Finance."
 
 ---
 
@@ -387,7 +387,7 @@ Open [manifest.json](manifest.json) and replace the two placeholder values:
 
 > **Finding your org name:** open Azure DevOps in a browser →
 > `https://dev.azure.com/{orgName}` — everything after `dev.azure.com/` is your org name.
-> Example: `https://dev.azure.com/powerazure365` → org name is `powerazure365`.
+> Example: `https://dev.azure.com/contoso` → org name is `contoso`.
 
 #### Step 2 — Add icon files (required by M365)
 

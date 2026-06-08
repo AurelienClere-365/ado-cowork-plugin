@@ -4,14 +4,14 @@ description: >
   Use when the user wants to select, switch, or filter an Azure DevOps organisation or
   project before running other commands. This skill establishes the active session context
   (org + project) that all other ADO Cowork skills consume automatically.
-  "use org powerazure365", "switch to project Platform", "set active project",
+  "use org contoso", "switch to project Platform", "set active project",
   "change organisation", "which project am I in", "select a project", "list my projects",
   "show available organisations", "filter projects by name", "use the Finance project",
   "I want to work on the Mobile App project", "change ADO context", "what is my current org",
   "switch ADO organisation", "pick a project from the list",
   "add customer organisation", "I have guest access to a customer tenant",
   "register a new ADO org", "add org contoso", "access client DevOps",
-  "I am a guest in the Genvia organisation", "show all my organisations",
+  "I am a guest in the Fabrikam organisation", "show all my organisations",
   "which orgs do I have access to", "org dashboard", "check org access"
 license: MIT
 metadata:
@@ -47,7 +47,7 @@ organisations where you have been added as a guest or external collaborator.
 
 | Term | What it is | Example |
 |---|---|---|
-| **Organisation** | The ADO tenant — top level. One MCP server entry per org. | `powerazure365`, `dynagile` |
+| **Organisation** | The ADO tenant — top level. One MCP server entry per org. | `contoso`, `fabrikam` |
 | **Project** | A team project inside an org. One org can have dozens. | `Platform`, `Mobile App`, `Finance` |
 
 ### Home org vs Customer / Guest org
@@ -71,8 +71,8 @@ Once set, the active org + project are stored as session variables and passed si
 to every ADO MCP tool call for the rest of the conversation:
 
 ```
-activeOrg:       powerazure365          ← org name (URL segment)
-activeMcpServer: ADO-PowerAzure365      ← the mcp.json server key to route tool calls to
+activeOrg:       contoso                ← org name (URL segment)
+activeMcpServer: ADO-Contoso            ← the mcp.json server key to route tool calls to
 activeOrgType:   home | customer        ← informational label
 activeProject:   Platform               ← project name
 activeProjectId: abc-123-def-456        ← project GUID (from core_list_projects)
@@ -90,8 +90,8 @@ activeProjectId: abc-123-def-456        ← project GUID (from core_list_project
 
    | # | Label | Organisation | Tenant type |
    |---|---|---|---|
-   | 1 | ADO-PowerAzure365 | powerazure365 | Home |
-   | 2 | my-mcp-server-f46e09fc | dynagile | Customer |
+   | 1 | ADO-Contoso | contoso | Home |
+   | 2 | ADO-Fabrikam | fabrikam | Customer |
 
    > Label the tenant type based on whether the org name segment matches the user's own
    > AAD tenant. If unknown, show "—" and let the user label it via Workflow F.
@@ -99,7 +99,7 @@ activeProjectId: abc-123-def-456        ← project GUID (from core_list_project
 2. If the user named an org explicitly, match it (case-insensitive on the org name segment
    or on the mcp.json key label).
 3. Confirm the selection:
-   > **Active organisation: powerazure365** (ADO-PowerAzure365 · Home tenant)
+   > **Active organisation: contoso** (ADO-Contoso · Home tenant)
 4. Automatically proceed to Workflow B (project selection) unless the user only asked
    to set the org.
 
@@ -156,7 +156,7 @@ activeProjectId: abc-123-def-456        ← project GUID (from core_list_project
 **Show context:**
 
 > **Active context:**
-> - Organisation: powerazure365 (mcp server: ADO-PowerAzure365)
+> - Organisation: contoso (mcp server: ADO-Contoso)
 > - Project: Platform (ID: abc-123-def-456)
 >
 > All ADO Cowork commands are currently scoped to this project.
@@ -189,8 +189,8 @@ Always confirm context changes with a clear banner:
 
 ```
 Active context updated
-  Organisation : powerazure365  (Home tenant)
-  MCP server   : ADO-PowerAzure365
+  Organisation : contoso  (Home tenant)
+  MCP server   : ADO-Contoso
   Project      : Platform
   Project ID   : abc-123-def-456
 
@@ -235,7 +235,7 @@ Produce the JSON entry to add to the `servers` block of `mcp.json`:
 ```
 
 > **Naming convention for the key:** `ADO-{OrgName}` with PascalCase, e.g.
-> `ADO-Contoso`, `ADO-FabrikamEu`, `ADO-GenviaSolutions`.
+> `ADO-Contoso`, `ADO-FabrikamEu`, `ADO-AdatumEu`.
 
 ### Step 3 — Explain where to add it
 
@@ -293,8 +293,8 @@ ADO Organisation Dashboard
 ──────────────────────────────────────────────────────────────
   #   Organisation      MCP server key            Projects   Status
 ──────────────────────────────────────────────────────────────
-  1   powerazure365     ADO-PowerAzure365             3       ✅ Accessible
-  2   dynagile          my-mcp-server-f46e09fc        5       ✅ Accessible
+  1   contoso           ADO-Contoso                   3       ✅ Accessible
+  2   fabrikam          ADO-Fabrikam                  5       ✅ Accessible
   3   contoso           ADO-Contoso                   —       ❌ Auth error
 ──────────────────────────────────────────────────────────────
   2 of 3 orgs accessible. 1 requires authentication.
@@ -314,7 +314,7 @@ ADO Organisation Dashboard
 
 - The context is **session-scoped** — it resets when the conversation ends. Users who
   always work in the same project can prefix their first message with
-  "Use org powerazure365, project Platform" to set it immediately.
+  "Use org contoso, project Platform" to set it immediately.
 - If the user's `mcp.json` contains only one `https://mcp.dev.azure.com/` entry, skip
   Workflow A and go directly to project selection.
 - Project IDs (GUIDs) returned by `core_list_projects` are stable — they can be bookmarked

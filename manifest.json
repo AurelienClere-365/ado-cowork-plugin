@@ -5,14 +5,14 @@
   "id": "e8b2a3f1-7c4d-4f91-b2e0-ado1c0ca0001",
   "packageName": "com.ado.cowork-plugin",
   "developer": {
-    "name": "Aurelien Clere",
-    "websiteUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin",
-    "privacyUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin/blob/main/PRIVACY.md",
-    "termsOfUseUrl": "https://github.com/AurelienClere-365/ado-cowork-plugin/blob/main/LICENSE"
+    "name": "YOUR_NAME",
+    "websiteUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin",
+    "privacyUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin/blob/main/PRIVACY.md",
+    "termsOfUseUrl": "https://github.com/YOUR_GITHUB_USER/ado-cowork-plugin/blob/main/LICENSE"
   },
   "name": {
     "short": "ADO Cowork",
-    "full": "Azure DevOps Cowork Plugin by Aurelien Clere"
+    "full": "Azure DevOps Cowork Plugin"
   },
   "description": {
     "short": "Azure DevOps AI assistant for Project Managers — and your whole team.",
