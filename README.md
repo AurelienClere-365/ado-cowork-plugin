@@ -1,4 +1,4 @@
-# ADO Cowork Plugin
+﻿# ADO Cowork Plugin
 
 An AI assistant plugin designed for **Project Managers** who need live Azure DevOps data
 without leaving their chat window — and for developers and functional consultants who want
@@ -385,8 +385,8 @@ Open [manifest.json](manifest.json) and replace the two placeholder values:
 
 ```jsonc
 // Line to update — referenceId (from Step 6b below):
-"referenceId": "YOUR_VAULT_REFERENCE_ID"
-//              ↑ paste the Vault reference ID after completing Step 6
+"referenceId": "YOUR_OAUTH_REGISTRATION_ID"
+//              ↑ paste the OAuth registration ID from Teams Developer Portal (Step 6b)
 ```
 
 ```jsonc
@@ -467,57 +467,62 @@ org. If the plugin is not responding, check:
 #### Step 6 — Authentication (required for MCP tools to work)
 
 > **Important:** `mcp.dev.azure.com` requires a Bearer token for every request.
-> The current manifest ships with `"type": "None"` as a safe default for upload
-> validation, but **the MCP connector will not function until you configure
-> OAuthPluginVault**. Without it, Cowork cannot call any ADO MCP tools.
+> **The MCP connector will not function until you complete this step.** Without it,
+> Cowork cannot call any ADO MCP tools and will respond with
+> *"I don't have a way to connect to Azure DevOps from here"*.
 
 ##### 6a — Create an Azure AD app registration
 
 1. Go to [portal.azure.com](https://portal.azure.com) → **Azure Active Directory** →
    **App registrations** → **New registration**
 2. Name: `ADO Cowork Plugin` — Supported account types: **Single tenant**
-3. Redirect URI: leave blank for now
-4. After creation, go to **API permissions** → **Add a permission** → **Azure DevOps**
-   → **Delegated** → tick `user_impersonation` → **Add permissions**
+3. Redirect URI: leave blank → **Register**
+4. **API permissions** → **Add a permission** → **Azure DevOps** → **Delegated** →
+   tick `user_impersonation` → **Add permissions**
 5. Click **Grant admin consent** for your tenant
-6. Go to **Certificates & secrets** → **New client secret** → set an expiry → **Add**
-7. Copy the **secret value** immediately (shown once only)
-8. Note down:
-   - **Client ID** (Overview page, “Application (client) ID”)
-   - **Tenant ID** (Overview page, “Directory (tenant) ID”)
-   - **Client secret** (from step 7)
+6. **Certificates & secrets** → **New client secret** → set an expiry → **Add**
+7. **Copy the secret value immediately** (shown once only)
+8. Note down from the **Overview** page:
+   - **Application (client) ID**
+   - **Directory (tenant) ID**
 
-##### 6b — Register the OAuth credential in M365 Admin Center
+##### 6b — Register in Teams Developer Portal
 
-This step must be done by a **Global Admin or Copilot Admin**.
-
-1. Go to [admin.microsoft.com](https://admin.microsoft.com) → **Settings** → **Copilot**
-   → **Plugin management**
-2. Click **Add OAuth credential** and fill in:
+1. Go to [dev.teams.microsoft.com](https://dev.teams.microsoft.com) → **Tools** →
+   **OAuth client registration** → **Register**
+2. Fill in the form:
 
 | Field | Value |
 |---|---|
-| Client ID | from step 6a |
-| Client secret | from step 6a |
-| Token URL | `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` |
-| Scope | `499b84ac-1321-427f-aa17-267ca6975798/user_impersonation` |
+| Registration name | `ADO Cowork` |
+| Base URL | `https://mcp.dev.azure.com` |
+| Restrict usage by organization | **My organization only** |
+| Restrict usage by Teams app | **Existing Teams app** |
+| Teams app ID | `e8b2a3f1-7c4d-4f91-b2e0-ad01c0ca0001` *(your manifest `id`)* |
+| Client ID | Application (client) ID from step 6a |
+| Client secret | Secret value from step 6a |
+| Authorization endpoint | `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize` |
+| Token endpoint | `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` |
+| Refresh endpoint | `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` |
 
-3. Save — copy the **Vault reference ID** shown.
+   Replace `{tenantId}` with your **Directory (tenant) ID** from step 6a.
 
-> The scope `499b84ac-1321-427f-aa17-267ca6975798` is the fixed Azure resource ID
-> for Azure DevOps across all tenants.
+3. Click **Save** — copy the **OAuth registration ID** shown. That is your `referenceId`.
 
 ##### 6c — Update manifest.json and redeploy
 
+Open `manifest.json` and fill in both placeholders:
+
 ```jsonc
+"mcpServerUrl": "https://mcp.dev.azure.com/YOUR_ORG_NAME",
 "authorization": {
   "type": "OAuthPluginVault",
-  "referenceId": "YOUR_VAULT_REFERENCE_ID"  // paste from step 6b
+  "referenceId": "YOUR_OAUTH_REGISTRATION_ID"
 }
 ```
 
-Then bump the version, run `.\.package.ps1`, and update the plugin in M365 Admin Center
-(**Agents → All agents → ADO Cowork → Update**).
+Then bump `"version"` (e.g. `"1.1.0"` → `"1.2.0"`), run `.\package.ps1`, and update
+the plugin (**Agents → All agents → ADO Cowork → Update**).
 
 After updating, Cowork will prompt each user to consent once; tokens are then stored and
 re-injected automatically on every call to `mcp.dev.azure.com`.
