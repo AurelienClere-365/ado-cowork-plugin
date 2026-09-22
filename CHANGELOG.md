@@ -46,4 +46,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-- Placeholder for next changes
+- Documented Option D — registering the Azure DevOps MCP server directly via the Cowork
+  Connectors gallery (`admin.cloud.microsoft/#/copilot/connectors/add`) as a simpler,
+  tenant-wide alternative to Option C's 6b/6c manifest-upload flow (raw MCP tools only,
+  no curated skills). See README.md Deployment options and Step 6a, and `setup-auth.ps1`.
