@@ -171,6 +171,7 @@ ado-cowork-plugin/
 ├── package.ps1                            # ASKILL validation + ZIP packaging
 ├── README.md                              # This file
 ├── EXAMPLES.md                            # Usage examples with sample prompts
+├── TROUBLESHOOTING.md                     # Monitoring, debugging & troubleshooting after deployment
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── PRIVACY.md
@@ -473,6 +474,11 @@ org. If the plugin is not responding, check:
   `mcp.dev.azure.com` rejects the connection and Cowork will respond with
   *"I don't have a way to connect to Azure DevOps from here"*
 
+> If validation fails and the reason isn't obvious, see
+> [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for how to monitor and debug the plugin after
+> deployment — including where to find Entra ID sign-in logs, common failure signatures,
+> and an escalation checklist.
+
 #### Step 6 — Authentication (required for MCP tools to work)
 
 > **Important:** `mcp.dev.azure.com` requires a Bearer token for every request.
@@ -675,6 +681,9 @@ No PAT is required. If prompted, sign in via `Azure: Sign In` in the command pal
   app registration and Teams Developer Portal, both outside this repository.
 - See [SECURITY.md](SECURITY.md) for least-privilege PAT scope guidance if your
   organisation requires PAT-based access instead of Azure AD.
+- See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for how to monitor, debug, and
+  troubleshoot the plugin once it's deployed and in use — especially for M365 Copilot,
+  where there's no local console or log file to check.
 
 ---
 
