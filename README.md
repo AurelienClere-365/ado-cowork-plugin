@@ -226,6 +226,15 @@ ado-cowork-plugin/
 | **A — Skills-only** | Any AI assistant | None | Copy a folder | GitHub Copilot (any plan) + Azure DevOps Basic |
 | **B — Local MCP** | VS Code Copilot | Azure AD (auto) | Edit mcp.json | GitHub Copilot (any plan) + Azure DevOps Basic |
 | **C — M365 Copilot** | Whole M365 tenant | OAuthPluginVault (required) | Admin upload | Microsoft 365 Copilot + Azure DevOps Basic + Frontier preview |
+| **D — Cowork Connectors gallery** | Whole M365 tenant, generic MCP tools only (no curated skills) | Admin-portal wizard (reuses 6a) | Admin portal, no manifest upload | Microsoft 365 Copilot + Azure DevOps Basic + Frontier preview |
+
+> **Option D is not a replacement for Option C.** Registering the Azure DevOps MCP server
+> at `admin.cloud.microsoft/#/copilot/connectors/add` → **Create a new connector** gives
+> Cowork raw access to the ADO MCP tools tenant-wide, but **without** this repo's curated
+> `agentSkills/` (PM-oriented prompts, tool filtering in `ado-mcp-tools.json`, branding). Use
+> it only for quick validation that the MCP connection itself works; use Option C for the
+> full "ADO Cowork" assistant experience. See the callout in
+> [Step 6 — Authentication](#step-6--authentication-required-for-mcp-tools-to-work) below.
 
 ---
 
@@ -501,6 +510,22 @@ org. If the plugin is not responding, check:
 8. Note down from the **Overview** page:
    - **Application (client) ID**
    - **Directory (tenant) ID**
+
+> **Alternative: skip 6b/6c with the Cowork Connectors gallery (Option D).** If you only
+> need Cowork-wide access to the raw ADO MCP tools — and don't need this repo's curated
+> `agentSkills/` (PM prompts, tool filtering, branding) — you can register the connector
+> directly instead of going through the Teams Developer Portal and manifest upload:
+>
+> 1. Go to [admin.cloud.microsoft/#/copilot/connectors/add](https://admin.cloud.microsoft/#/copilot/connectors/add)
+>    → **Copilot** → **Connectors** → **Create a new connector**.
+> 2. Point it at the Azure DevOps MCP server (`https://mcp.dev.azure.com/YOUR_ORG_NAME`) and
+>    supply the **Application (client) ID**, **Directory (tenant) ID**, and client secret
+>    from 6a when prompted for OAuth details.
+>
+> This bypasses the Teams Developer Portal OAuth client registration (6b) and the
+> `manifest.json` patch / `package.ps1` / Agents → All agents upload (6c) entirely — the
+> tradeoff is that Cowork only gets generic MCP tool access, not the packaged "ADO Cowork"
+> skillset. Continue with 6b/6c below if you want the full curated experience.
 
 ##### 6b — Register in Teams Developer Portal
 

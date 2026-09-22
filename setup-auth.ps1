@@ -22,6 +22,15 @@
     client registration (dev.teams.microsoft.com) must still be completed manually in a
     browser — Microsoft does not expose a public API for it.
 
+    Alternative (Option D — Cowork Connectors gallery): if you only need Cowork-wide
+    access to the raw Azure DevOps MCP tools and don't need this repo's curated
+    `agentSkills/` (PM prompts, tool filtering, branding), you can skip steps 3-6 above
+    entirely. After this script (or -SkipAzureAd) gives you the Application (client) ID,
+    Directory (tenant) ID, and client secret, register the connector directly at
+    admin.cloud.microsoft/#/copilot/connectors/add -> Create a new connector, instead of
+    going through the Teams Developer Portal and the manifest.json/package.ps1/upload flow.
+    See the "Alternative" callout under Step 6a in README.md for details.
+
     Use `-UpdateOnly` for the common "I already have auth configured from a previous run,
     I just want to push a newer version" case (e.g. upgrading an existing 1.1.0 tenant
     deployment to 1.2.0+). It skips the Azure AD app registration/secret and the Teams
