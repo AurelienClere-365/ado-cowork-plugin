@@ -225,7 +225,7 @@ ado-cowork-plugin/
 |---|---|---|---|---|
 | **A — Skills-only** | Any AI assistant | None | Copy a folder | GitHub Copilot (any plan) + Azure DevOps Basic |
 | **B — Local MCP** | VS Code Copilot | Azure AD (auto) | Edit mcp.json | GitHub Copilot (any plan) + Azure DevOps Basic |
-| **C — M365 Copilot** | Whole M365 tenant | None (upgradable to OAuthPluginVault) | Admin upload | Microsoft 365 Copilot + Azure DevOps Basic + Frontier preview |
+| **C — M365 Copilot** | Whole M365 tenant | OAuthPluginVault (required) | Admin upload | Microsoft 365 Copilot + Azure DevOps Basic + Frontier preview |
 
 ---
 
@@ -471,6 +471,22 @@ org. If the plugin is not responding, check:
 > Cowork cannot call any ADO MCP tools and will respond with
 > *"I don't have a way to connect to Azure DevOps from here"*.
 
+`OAuthPluginVault` is the **required baseline** for Option C — `manifest.json` ships with
+`authorization.type: OAuthPluginVault` by default (not `None`). There is no supported
+"skip auth" path for the M365 Copilot deployment; complete 6a-6c below (or run
+`setup-auth.ps1`, see below) before uploading.
+
+> **Faster path - `setup-auth.ps1`:** automates steps 6a and 6c (app registration,
+> `user_impersonation` permission, admin consent, client secret, manifest patch, version
+> bump, changelog entry, and packaging). Step 6b (Teams Developer Portal) has no public
+> API and still requires the manual form below.
+>
+> ```powershell
+> .\setup-auth.ps1 -OrgName contoso
+> # Prints the Application (client) ID, Directory (tenant) ID and client secret for 6b,
+> # then prompts you to paste back the referenceId once 6b is complete.
+> ```
+
 ##### 6a — Create an Azure AD app registration
 
 1. Go to [portal.azure.com](https://portal.azure.com) → **Azure Active Directory** →
@@ -511,7 +527,10 @@ org. If the plugin is not responding, check:
 
 ##### 6c — Update manifest.json and redeploy
 
-Open `manifest.json` and fill in both placeholders:
+`setup-auth.ps1` does this step for you (see the "Faster path" callout above): it patches
+both placeholders, bumps the version, appends a `CHANGELOG.md` entry, and runs
+`package.ps1`. To do it by hand instead, open `manifest.json` and fill in both
+placeholders:
 
 ```jsonc
 "mcpServerUrl": "https://mcp.dev.azure.com/YOUR_ORG_NAME",
@@ -527,6 +546,13 @@ the plugin (**Agents → All agents → ADO Cowork → Update**).
 After updating, Cowork will prompt each user to consent once; tokens are then stored and
 re-injected automatically on every call to `mcp.dev.azure.com`.
 
+> **Client secret rotation:** the Azure AD app registration's client secret has an
+> expiry date (`setup-auth.ps1` prints it and defaults to 12 months via
+> `-SecretExpiryMonths`). If it lapses, `mcp.dev.azure.com` rejects every user silently.
+> Set a calendar reminder before the expiry date and re-run `setup-auth.ps1` (or rotate
+> the secret manually in the Azure Portal) well ahead of it. See
+> [SECURITY.md](SECURITY.md#secret-rotation) for details.
+
 #### Updating the plugin
 
 To push an updated version:
@@ -536,6 +562,10 @@ To push an updated version:
 3. Run `.\package.ps1` to produce a new ZIP.
 4. In M365 Admin Centre → **Agents** → **All agents** → find **ADO Cowork** → **Update**.
 5. Upload the new ZIP. Users get the update automatically.
+
+> If the update also involves re-provisioning authentication (new org, rotated secret,
+> new `referenceId`), run `.\setup-auth.ps1` instead of steps 1–3 above — it bumps the
+> version, updates the changelog, and packages in one pass.
 
 ---
 
@@ -590,9 +620,11 @@ No PAT is required. If prompted, sign in via `Azure: Sign In` in the command pal
   authentication** at the platform level. No anonymous access is possible.
 - VS Code (Option B) authenticates using your existing Azure AD session — no PAT, no
   service principal, no Key Vault required.
-- M365 Copilot (Option C) uses `authorization.type: None` — the ADO MCP server still
-  enforces Azure AD authentication per user at the platform level; secrets are never in
-  source code or committed files. Upgrade to OAuthPluginVault for production (see Step 6).
+- M365 Copilot (Option C) requires `authorization.type: OAuthPluginVault` — the ADO MCP
+  server enforces Azure AD authentication per user at the platform level, and the plugin
+  layer additionally requires each user to consent once via the OAuth flow. Secrets are
+  never in source code or committed files; the client secret lives only in the Azure AD
+  app registration and Teams Developer Portal, both outside this repository.
 - See [SECURITY.md](SECURITY.md) for least-privilege PAT scope guidance if your
   organisation requires PAT-based access instead of Azure AD.
 
