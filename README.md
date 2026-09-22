@@ -546,26 +546,49 @@ the plugin (**Agents → All agents → ADO Cowork → Update**).
 After updating, Cowork will prompt each user to consent once; tokens are then stored and
 re-injected automatically on every call to `mcp.dev.azure.com`.
 
+#### Updating the plugin (e.g. upgrading an existing 1.1.0 tenant to 1.2.0+)
+
+**Most common case — auth is already configured, just pushing a newer version:**
+
+If your tenant already has the plugin installed and working (auth already set up from a
+previous run of Step 6 or `setup-auth.ps1`), use `-UpdateOnly` — it is the fastest and
+lowest-risk path because it does **not** touch `mcpServerUrl` or the `authorization` block
+at all, so there is no risk of accidentally breaking an already-working connection:
+
+```powershell
+.\setup-auth.ps1 -UpdateOnly -NewVersion 1.2.0
+# Bumps manifest.json version, updates CHANGELOG.md, re-runs package.ps1.
+# mcpServerUrl and authorization are left exactly as they are today.
+```
+
+Then upload the resulting `ado-cowork-plugin.zip` via **Agents → All agents → ADO Cowork →
+Update** in the M365 Admin Centre. Omit `-NewVersion` to auto-increment the patch version
+instead of specifying it explicitly.
+
+**Manual equivalent** (no PowerShell / no `az` CLI available):
+
+1. Make changes to skills or manifest (if any).
+2. Bump `"version"` in `manifest.json` (e.g. `"1.1.0"` → `"1.2.0"`). Leave
+   `mcpServerUrl` and `authorization` untouched if auth is already working.
+3. Run `.\package.ps1` to produce a new ZIP.
+4. In M365 Admin Centre → **Agents** → **All agents** → find **ADO Cowork** → **Update**.
+5. Upload the new ZIP. Users get the update automatically — no re-consent needed since
+   the `authorization.referenceId` did not change.
+
+**If auth also needs to change** (new org, rotated secret, new `referenceId`, or you are
+moving a pre-1.2.0 tenant that still has `authorization.type: None` to the now-required
+`OAuthPluginVault` baseline), run the full flow instead of `-UpdateOnly`:
+
+```powershell
+.\setup-auth.ps1 -OrgName contoso -NewVersion 1.2.0
+```
+
 > **Client secret rotation:** the Azure AD app registration's client secret has an
 > expiry date (`setup-auth.ps1` prints it and defaults to 12 months via
 > `-SecretExpiryMonths`). If it lapses, `mcp.dev.azure.com` rejects every user silently.
 > Set a calendar reminder before the expiry date and re-run `setup-auth.ps1` (or rotate
 > the secret manually in the Azure Portal) well ahead of it. See
 > [SECURITY.md](SECURITY.md#secret-rotation) for details.
-
-#### Updating the plugin
-
-To push an updated version:
-
-1. Make changes to skills or manifest.
-2. Bump `"version"` in `manifest.json` (e.g. `"1.0.0"` → `"1.1.0"`).
-3. Run `.\package.ps1` to produce a new ZIP.
-4. In M365 Admin Centre → **Agents** → **All agents** → find **ADO Cowork** → **Update**.
-5. Upload the new ZIP. Users get the update automatically.
-
-> If the update also involves re-provisioning authentication (new org, rotated secret,
-> new `referenceId`), run `.\setup-auth.ps1` instead of steps 1–3 above — it bumps the
-> version, updates the changelog, and packages in one pass.
 
 ---
 

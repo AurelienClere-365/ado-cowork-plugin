@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-    Automate the OAuthPluginVault setup for the ADO Cowork Plugin (Option C — M365 Copilot).
+    Automate the OAuthPluginVault setup for the ADO Cowork Plugin (Option C — M365 Copilot),
+    and provide a fast, low-risk path to update an already-deployed tenant to a newer version.
 
 .DESCRIPTION
     Automates everything in the "Step 6 — Authentication" section of README.md that can be
@@ -21,8 +22,18 @@
     client registration (dev.teams.microsoft.com) must still be completed manually in a
     browser — Microsoft does not expose a public API for it.
 
+    Use `-UpdateOnly` for the common "I already have auth configured from a previous run,
+    I just want to push a newer version" case (e.g. upgrading an existing 1.1.0 tenant
+    deployment to 1.2.0+). It skips the Azure AD app registration/secret and the Teams
+    Developer Portal `referenceId` prompt entirely, leaves the existing `mcpServerUrl` and
+    `authorization` block in manifest.json untouched, and only bumps the version, appends a
+    changelog entry, and re-packages — the minimum needed to produce a ZIP you can upload
+    via **Agents → All agents → ADO Cowork → Update**.
+
 .PARAMETER OrgName
     Azure DevOps organisation name (the segment after dev.azure.com/ in the browser URL).
+    Required unless -UpdateOnly is used, in which case the existing value in manifest.json
+    is kept and this parameter can be omitted.
 
 .PARAMETER AppDisplayName
     Display name for the Azure AD app registration. Defaults to "ADO Cowork Plugin".
@@ -32,9 +43,18 @@
     forces more frequent rotation reminders; a longer value reduces rotation friction.
 
 .PARAMETER SkipAzureAd
-    Skip app-registration creation/secret generation and go straight to the manifest
-    patch + changelog + package steps. Use this when you already have the Application
-    (client) ID, Directory (tenant) ID and referenceId from a previous run.
+    Skip app-registration creation/secret generation but still prompt for the
+    Teams Developer Portal `referenceId` and patch manifest.json with it. Use this when you
+    already have the Application (client) ID, Directory (tenant) ID and a fresh referenceId
+    from a previous run. For a plain version update with no auth changes at all, use
+    `-UpdateOnly` instead.
+
+.PARAMETER UpdateOnly
+    Fast update path: skips Azure AD provisioning AND the referenceId prompt, keeping
+    manifest.json's existing `mcpServerUrl` and `authorization` block untouched. Only bumps
+    the version, appends a CHANGELOG.md entry, and re-runs package.ps1. Use this to move an
+    already-configured tenant (e.g. one running 1.1.0 with auth already set up) to a newer
+    version without re-running the Azure AD / Teams Developer Portal steps.
 
 .PARAMETER NewVersion
     Version string to write into manifest.json (e.g. "1.2.0"). If omitted, the patch
@@ -45,10 +65,14 @@
 
 .EXAMPLE
     .\setup-auth.ps1 -OrgName contoso -SecretExpiryMonths 6 -NewVersion 1.3.0
+
+.EXAMPLE
+    # Upgrade an existing tenant deployment (auth already configured) from 1.1.0 to 1.2.0
+    .\setup-auth.ps1 -UpdateOnly -NewVersion 1.2.0
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string]$OrgName,
 
     [string]$AppDisplayName = "ADO Cowork Plugin",
@@ -58,8 +82,15 @@ param(
 
     [switch]$SkipAzureAd,
 
+    [switch]$UpdateOnly,
+
     [string]$NewVersion
 )
+
+if (-not $UpdateOnly -and -not $OrgName) {
+    Write-Error "-OrgName is required unless -UpdateOnly is used."
+    exit 1
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -91,8 +122,14 @@ $appId = $null
 $tenantId = $null
 $secretValue = $null
 $secretExpiry = $null
+$referenceId = $null
 
-if (-not $SkipAzureAd) {
+if ($UpdateOnly) {
+    Write-Section "Update-only mode (-UpdateOnly)"
+    Write-Host "Skipping Azure AD provisioning and the Teams Developer Portal prompt."
+    Write-Host "manifest.json's existing 'mcpServerUrl' and 'authorization' block will be kept as-is."
+    Write-Host "Use this when auth is already configured (e.g. upgrading an existing 1.1.0 tenant deployment)."
+} elseif (-not $SkipAzureAd) {
     Write-Section "Azure AD app registration"
 
     $az = Get-Command az -ErrorAction SilentlyContinue
@@ -150,19 +187,21 @@ if (-not $SkipAzureAd) {
     Write-Section "Skipping Azure AD app registration (-SkipAzureAd)"
 }
 
-# ---------------------------------------------------------------------------
-# Step 3 — Teams Developer Portal OAuth client registration (manual, no public API)
-# ---------------------------------------------------------------------------
-Write-Section "Teams Developer Portal (manual step)"
-Write-Host "Go to https://dev.teams.microsoft.com -> Tools -> OAuth client registration -> Register"
-Write-Host "and fill in the form using the values above (see README.md Step 6b for field-by-field guidance)."
-Write-Host "This step has no public REST/PowerShell API and cannot be automated."
-Write-Host ""
+if (-not $UpdateOnly) {
+    # -----------------------------------------------------------------------
+    # Step 3 — Teams Developer Portal OAuth client registration (manual, no public API)
+    # -----------------------------------------------------------------------
+    Write-Section "Teams Developer Portal (manual step)"
+    Write-Host "Go to https://dev.teams.microsoft.com -> Tools -> OAuth client registration -> Register"
+    Write-Host "and fill in the form using the values above (see README.md Step 6b for field-by-field guidance)."
+    Write-Host "This step has no public REST/PowerShell API and cannot be automated."
+    Write-Host ""
 
-$referenceId = Read-Host "Paste the OAuth registration ID (referenceId) from Teams Developer Portal"
-if ([string]::IsNullOrWhiteSpace($referenceId)) {
-    Write-Error "referenceId is required to update manifest.json. Re-run once you have it."
-    exit 1
+    $referenceId = Read-Host "Paste the OAuth registration ID (referenceId) from Teams Developer Portal"
+    if ([string]::IsNullOrWhiteSpace($referenceId)) {
+        Write-Error "referenceId is required to update manifest.json. Re-run once you have it."
+        exit 1
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -172,9 +211,13 @@ Write-Section "Patching manifest.json"
 
 $manifest = [IO.File]::ReadAllText($manifestPath) | ConvertFrom-Json
 
-$manifest.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl = "https://mcp.dev.azure.com/$OrgName"
-$manifest.agentConnectors[0].toolSource.remoteMcpServer.authorization.type = "OAuthPluginVault"
-$manifest.agentConnectors[0].toolSource.remoteMcpServer.authorization.referenceId = $referenceId
+if ($UpdateOnly) {
+    Write-Host "  Keeping existing mcpServerUrl and authorization block unchanged."
+} else {
+    $manifest.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl = "https://mcp.dev.azure.com/$OrgName"
+    $manifest.agentConnectors[0].toolSource.remoteMcpServer.authorization.type = "OAuthPluginVault"
+    $manifest.agentConnectors[0].toolSource.remoteMcpServer.authorization.referenceId = $referenceId
+}
 
 $currentVersion = $manifest.version
 if (-not $NewVersion) {
@@ -190,7 +233,11 @@ if (-not $NewVersion) {
 $manifest.version = $NewVersion
 
 ($manifest | ConvertTo-Json -Depth 20) | Set-Content -Path $manifestPath -Encoding utf8
-Write-Host ("  manifest.json updated: version {0} -> {1}, org '{2}', referenceId set." -f $currentVersion, $NewVersion, $OrgName) -ForegroundColor Green
+if ($UpdateOnly) {
+    Write-Host ("  manifest.json updated: version {0} -> {1} (mcpServerUrl/authorization unchanged)." -f $currentVersion, $NewVersion) -ForegroundColor Green
+} else {
+    Write-Host ("  manifest.json updated: version {0} -> {1}, org '{2}', referenceId set." -f $currentVersion, $NewVersion, $OrgName) -ForegroundColor Green
+}
 
 # ---------------------------------------------------------------------------
 # Step 5 — Update CHANGELOG.md
@@ -206,7 +253,11 @@ if (Test-Path $changelogPath) {
 
     $unreleasedNotes = if ($match.Success) { $match.Groups[1].Value.Trim() } else { '' }
     if ([string]::IsNullOrWhiteSpace($unreleasedNotes) -or $unreleasedNotes -eq '- Placeholder for next changes') {
-        $unreleasedNotes = "- Configured OAuthPluginVault authentication (org: $OrgName) via ``setup-auth.ps1``"
+        $unreleasedNotes = if ($UpdateOnly) {
+            "- Version bump only — no auth or skill changes (via ``setup-auth.ps1 -UpdateOnly``)"
+        } else {
+            "- Configured OAuthPluginVault authentication (org: $OrgName) via ``setup-auth.ps1``"
+        }
     }
 
     $newEntry = @"
